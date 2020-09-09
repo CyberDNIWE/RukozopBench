@@ -1,4 +1,4 @@
-[![CyberDNIWE](https://avatars3.githubusercontent.com/u/19151176?s=120&v=4 "Fork me @github")](https://github.com/CyberDNIWE/)
+[![CyberDNIWE](https://i.imgur.com/tvIphsZ.png "Fork me @github")](https://github.com/CyberDNIWE/)
 # RukozopBench
 [RukozopBench](https://github.com/CyberDNIWE/RukozopBench) is a simple quick-and-dirty **one-header-only** benchmarking tool to quickly and wrongly measure performance in units of time (instead of CPU cycles, like normal people).
 
@@ -12,33 +12,49 @@
 * Be amazed! (but not really)
 
 ## Usage examples
+###### from `RukozopBenchExample.cpp`
 ```c++
-//#include <stdio.h>
 #include <RukozopBench.h>
 
+
 // The function we'd like to measure
-void measureMe()
+void measureMe(const std::string& msg, int sleepTimeMS)
 {
-    unsigned int time = 1;
-    std::cout << __func__ <<": I'm going to sleep for " << time << "seconds" << std::endl;
     #ifdef WIN32
-    _sleep(time * 1000);
+    _sleep(sleepTimeMS);
     #else
-    sleep(time * 1000);
+    sleep(sleepTimeMS);
     #endif
-    std::cout << __func__ << ": I woke up!" << std::endl;
+    //std::cout << __func__ <<" was given message to print: " << msg << " and sleep time of: " << sleepTimeMS << " ms" << std::endl;
 }
 
-using namespace rukozop_bench;
 int main(int argc, char* argv[])
 {
-    //Any of std::chrono time units work
-    printTime("My awsome function", measureExecTimeAvg<std::chrono::milliseconds>(measureMe, 2));
-    //printTime("My awsome function", measureExecTimeAvg<std::chrono::microseconds>(measureMe, 2));
-    //printTime("My awsome function", measureExecTimeAvg<std::chrono::nanoseconds>(measureMe, 2));
-    //It is also possible to make custom time units, see "UnitOfTimeGeneral" region in RukozopBench.h
-
-    //getchar();
+    using namespace rukozop_bench;
+    
+    std::cout << "We will now test different usage scenarios on essentially singular example (each test may take some time)" << std::endl
+    	<< "Working..." << std::endl;
+    // Default way:
+    printTime("My awsome function, tested for RKZP_ITER_AMT_DEFAULT repetitions with RKZP_ACCURACY_DEFAULT accuracy", measureExecTimeAvg(measureMe, "Hello there!", 1));
+    
+    // Specifying accuracy manually:
+    printTime("My awsome function, tested for RKZP_ITER_AMT_DEFAULT repetitions, with millisecond accuracy", measureExecTimeAvg<rukozop_bench::milliseconds>(measureMe, "Hello there!", 1));
+    
+    // Specifying test runs amount manually:
+    printTime("My awsome function, tested for 2 repetitions with default accuracy", measureExecTimeAvg<2>(measureMe, "Hello there!", 1));
+    
+    // Specifying both accuracy and amount of test runs manually:
+    printTime("My awsome function, tested for 2 repetitions, with millisecod accuracy", measureExecTimeAvg<rukozop_bench::milliseconds, 2>(measureMe, "Hello there!", 1));
+    
+    // Any of above can also be used with lambdas: (written in multiple lines for clarity)
+    auto l = [&](const std::string& a, int b){ return measureMe(a, b); };
+    auto timeMeasurement = measureExecTimeAvg(l, "Hello there!", 1);
+    printTime("Lambda, RKZP_ITER_AMT_DEFAULT repetitions, RKZP_ACCURACY_DEFAULT accuracy", timeMeasurement);
+    
+    
+    // We done here!
+    std::cout << "Demo completed!" << std::endl;
+    std::cin.get();    
 }
 ```
 
@@ -49,16 +65,16 @@ int main(int argc, char* argv[])
 ```c++
 
 template<>
-struct UnitOfTime<my::awsome::time::unit>
+struct rukozop_bench::UnitOfTime<my::awsome::time::unit>
 {
-	long double operator()() const
-	{
-		return 69;
-	}
-	std::string getSuffix() const
-	{
-		return "SixtyNinesOfNs";
-	}
+    long double operator()() const
+    {
+    	return 69;
+    }
+    std::string getSuffix() const
+    {
+    	return "SixtyNinesOfNs";
+    }
 };
 ```
 

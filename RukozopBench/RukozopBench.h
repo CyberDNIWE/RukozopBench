@@ -7,11 +7,11 @@
 
 //=========================================== Usage example ============================================//
 /*
-void myAwsomeFunction()
+void myAwsomeFunction(int param1, std::string param2)
 { //... Stuff you need to measure ...// }
 
 using namespace rukozop_bench;
-printTime("My awsome function", measureExecTimeAvg<std::chrono::milliseconds>(myAwsomeFunction, 10000));
+printTime("My awsome function", measureExecTimeAvg<rukozop_bench::milliseconds, 10000>(myAwsomeFunction, 69, "Hello, world"));
 */
 //======================================================================================================//
 
@@ -23,16 +23,34 @@ printTime("My awsome function", measureExecTimeAvg<std::chrono::milliseconds>(my
 	#define RKZP_UNIT_OF_TIME_ERROR_NOT_IMPLEMENTED "Provide your own specialization for time unit scaling :("
 	#endif
 
+	#ifndef RKZP_ACCURACY_DEFAULT
+	#define RKZP_ACCURACY_DEFAULT rukozop_bench::milliseconds
+	#endif
+
 #pragma endregion
 
 namespace rukozop_bench
 {
+	#pragma region typedefs
+	
+	typedef		std::chrono::nanoseconds	nanoseconds;
+	typedef		std::chrono::microseconds	microseconds;
+	typedef		std::chrono::milliseconds	milliseconds;
+	typedef		std::chrono::seconds		seconds;
+	typedef		std::chrono::minutes		minutes;
+	typedef		std::chrono::hours			hours;
+
+	#pragma endregion
+
+	
 	class TimeMeasurement
 	{
 	public:
-		TimeMeasurement(long double time, const std::string& unit) :
-			time_(time), unit_(unit)
+		template<typename TIMECOUNT = long double, typename UNITDESCR = std::string>
+		TimeMeasurement(TIMECOUNT time, const UNITDESCR& unit) :
+			time_(static_cast<decltype(time_)>(time)), unit_(unit)
 		{}
+
 		long double time_;
 		std::string unit_;
 	};
@@ -56,7 +74,7 @@ namespace rukozop_bench
 	
 	#pragma region UnitsOfTimeSpecializations
 	template<>
-	struct UnitOfTime<std::chrono::nanoseconds>
+	struct UnitOfTime<nanoseconds>
 	{
 		long double operator()() const
 		{
@@ -70,11 +88,11 @@ namespace rukozop_bench
 	};
 
 	template<>
-	struct UnitOfTime<std::chrono::microseconds>
+	struct UnitOfTime<microseconds>
 	{
 		long double operator()() const
 		{
-			return UnitOfTime<std::chrono::nanoseconds>()() * 1000;
+			return UnitOfTime<nanoseconds>()() * 1000;
 		}
 
 		std::string getSuffix() const
@@ -84,11 +102,11 @@ namespace rukozop_bench
 	};
 
 	template<>
-	struct UnitOfTime<std::chrono::milliseconds>
+	struct UnitOfTime<milliseconds>
 	{
 		long double operator()() const
 		{
-			return UnitOfTime<std::chrono::microseconds>()() * 1000;
+			return UnitOfTime<microseconds>()() * 1000;
 		}
 
 		std::string getSuffix() const
@@ -98,11 +116,11 @@ namespace rukozop_bench
 	};
 
 	template<>
-	struct UnitOfTime<std::chrono::seconds>
+	struct UnitOfTime<seconds>
 	{
 		long double operator()() const
 		{
-			return UnitOfTime<std::chrono::milliseconds>()() * 1000;
+			return UnitOfTime<milliseconds>()() * 1000;
 		}
 
 		std::string getSuffix() const
@@ -112,11 +130,11 @@ namespace rukozop_bench
 	};
 
 	template<>
-	struct UnitOfTime<std::chrono::minutes>
+	struct UnitOfTime<minutes>
 	{
 		long double operator()() const
 		{
-			return UnitOfTime<std::chrono::seconds>()() * 60;
+			return UnitOfTime<seconds>()() * 60;
 		}
 
 		std::string getSuffix() const
@@ -126,11 +144,11 @@ namespace rukozop_bench
 	};
 
 	template<>
-	struct UnitOfTime<std::chrono::hours>
+	struct UnitOfTime<hours>
 	{
 		long double operator()() const
 		{
-			return UnitOfTime<std::chrono::minutes>()() * 60;
+			return UnitOfTime<minutes>()() * 60;
 		}
 
 		std::string getSuffix() const
@@ -221,29 +239,43 @@ namespace rukozop_bench
 
 
 	#pragma region measurementFuncionsTemplates
-	template<typename F>
-	TimeDiff measureExecTime(const F& func)
+	template<typename F, typename ...ARGS>
+	TimeDiff measureExecTime(const F& func, ARGS && ...args)
 	{
+
 		auto t1 = std::chrono::high_resolution_clock::now();
-		func();
+		func(std::forward<ARGS>(args)...);
 		auto t2 = std::chrono::high_resolution_clock::now();
 
 		return TimeDiff(t1, t2);
 
 	}
 
-	template<typename TU = std::chrono::milliseconds, typename F>
-	TimeMeasurement measureExecTimeAvg(const F& func, unsigned long long avgOver = RKZP_ITER_AMT_DEFAULT)
+	template<typename TU, unsigned long long AVGOVER, typename F, typename ...ARGS>
+	TimeMeasurement measureExecTimeAvg(const F& func, ARGS&& ...args)
 	{
-		TimeSpans ts = TimeSpans(avgOver);
+		TimeSpans ts = TimeSpans(AVGOVER);
 
-		for(unsigned long long i = 0; i < avgOver; ++i)
+		for(unsigned long long i = 0; i < AVGOVER; ++i)
 		{
-			ts.add(std::move(measureExecTime(func)));
+			ts.add(std::move(measureExecTime(func, std::forward<ARGS>(args)...)));
 		}
 
 		return ts.getTimeMeasurement<TU>();
 	}
+
+	template<unsigned long long AVGOVER, typename F, typename ...ARGS>
+	TimeMeasurement measureExecTimeAvg(const F& func, ARGS&& ...args)
+	{
+		return measureExecTimeAvg<RKZP_ACCURACY_DEFAULT, AVGOVER>(func, std::forward<ARGS>(args)...);
+	}
+
+	template<typename TU = RKZP_ACCURACY_DEFAULT, typename F, typename ...ARGS>
+	TimeMeasurement measureExecTimeAvg(const F& func, ARGS&& ...args)
+	{
+		return measureExecTimeAvg<TU, RKZP_ITER_AMT_DEFAULT>(func, std::forward<ARGS>(args)...);
+	}
+
 	#pragma endregion
 
 
@@ -262,5 +294,6 @@ namespace rukozop_bench
 
 	#undef RKZP_ITER_AMT_DEFAULT
 	#undef RKZP_UNIT_OF_TIME_ERROR_NOT_IMPLEMENTED
+	#undef RKZP_ACCURACY_DEFAULT
 
 #pragma endregion
