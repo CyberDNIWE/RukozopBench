@@ -1,6 +1,6 @@
 [![CyberDNIWE](https://i.imgur.com/tvIphsZ.png "Fork me @github")](https://github.com/CyberDNIWE/)
 # RukozopBench
-[RukozopBench](https://github.com/CyberDNIWE/RukozopBench) is a simple quick-and-dirty **one-header-only** benchmarking tool to quickly and wrongly measure performance in units of time (instead of CPU cycles, like normal people).
+[RukozopBench](https://github.com/CyberDNIWE/RukozopBench) is a simple quick-and-dirty **cross-platform** **one-header-only** benchmarking tool to quickly and wrongly measure performance in units of time (instead of CPU cycles, like normal people).
 
 ## Installation
 * Checkout repo
@@ -15,7 +15,10 @@
 ###### from `RukozopBenchExample.cpp`
 ```c++
 #include <RukozopBench.h>
-
+//For all you -nix people out there
+#ifndef WIN32
+#include <unistd.h>
+#endif
 
 // The function we'd like to measure
 void measureMe(const std::string& msg, int sleepTimeMS)

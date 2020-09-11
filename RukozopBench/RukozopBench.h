@@ -56,20 +56,9 @@ namespace rukozop_bench
 	};
 
 	#pragma region UnitOfTimeGeneral
+	//Forward declare templated type to be specialized later
 	template<typename TU>
-	struct UnitOfTime
-	{
-		long double operator()() const
-		{
-			static_assert(false, RKZP_UNIT_OF_TIME_ERROR_NOT_IMPLEMENTED);
-			return 0;
-		}
-		std::string getSuffix() const
-		{
-			static_assert(false, RKZP_UNIT_OF_TIME_ERROR_NOT_IMPLEMENTED);
-			return std::string();
-		}
-	};
+	struct UnitOfTime;
 	#pragma endregion
 	
 	#pragma region UnitsOfTimeSpecializations
@@ -163,8 +152,8 @@ namespace rukozop_bench
 	class TimeDiff
 	{
 	public:
-		TimeDiff(const std::chrono::time_point<std::chrono::steady_clock>& begin,
-			const std::chrono::time_point<std::chrono::steady_clock>& end)
+		template<typename TP>
+		TimeDiff(const TP& begin, const TP& end)
 		{
 			m_timeSpan = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
 		}
@@ -242,7 +231,6 @@ namespace rukozop_bench
 	template<typename F, typename ...ARGS>
 	TimeDiff measureExecTime(const F& func, ARGS && ...args)
 	{
-
 		auto t1 = std::chrono::high_resolution_clock::now();
 		func(std::forward<ARGS>(args)...);
 		auto t2 = std::chrono::high_resolution_clock::now();

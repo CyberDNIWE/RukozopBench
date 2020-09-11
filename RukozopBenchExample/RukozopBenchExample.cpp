@@ -1,5 +1,7 @@
 #include <RukozopBench.h>
-
+#ifndef WIN32
+#include <unistd.h>
+#endif
 
 // The function we'd like to measure
 void measureMe(const std::string& msg, int sleepTimeMS)
