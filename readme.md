@@ -14,7 +14,7 @@
 ## Usage examples
 ###### from `RukozopBenchExample.cpp`
 ```c++
-#include <RukozopBench.h>
+#include <RukozopBench/RukozopBench.h>
 //For all you -nix people out there
 #ifndef WIN32
 #include <unistd.h>
